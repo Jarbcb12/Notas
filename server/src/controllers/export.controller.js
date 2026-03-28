@@ -1,9 +1,10 @@
+const ExcelJS = require("exceljs");
 const PDFDocument = require("pdfkit");
 const XLSX = require("xlsx");
 const prisma = require("../config/prisma");
 const AppError = require("../utils/appError");
 const { getGroupGradebook, ensureGroupOwnership } = require("../services/group.service");
-const { toNumber } = require("../utils/gradebook");
+const { getPerformanceColor, toNumber } = require("../utils/gradebook");
 
 function buildRows(gradebook) {
   return gradebook.students.map((student) => {
@@ -22,16 +23,123 @@ function buildRows(gradebook) {
   });
 }
 
+function getExcelTone(finalOrGradeValue) {
+  const tone = getPerformanceColor(Number(finalOrGradeValue || 0));
+
+  if (tone === "danger") {
+    return {
+      fill: "FEE2E2",
+      font: "B91C1C"
+    };
+  }
+
+  if (tone === "warning") {
+    return {
+      fill: "FED7AA",
+      font: "C2410C"
+    };
+  }
+
+  return {
+    fill: "DCFCE7",
+    font: "166534"
+  };
+}
+
 async function exportExcel(req, res) {
   const gradebook = await getGroupGradebook(req.params.groupId, req.user.userId);
-  const rows = buildRows(gradebook);
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Notas");
+  const evaluationHeaders = gradebook.evaluations.map((evaluation) => `${evaluation.name} (${evaluation.percentage}%)`);
 
-  const workbook = XLSX.utils.book_new();
-  const worksheet = XLSX.utils.json_to_sheet(rows);
+  worksheet.columns = [
+    { header: "Estudiante", key: "student", width: 30 },
+    { header: "Identificacion", key: "identification", width: 20 },
+    ...evaluationHeaders.map((header) => ({ header, key: header, width: 18 })),
+    { header: "Nota final", key: "final", width: 15 }
+  ];
 
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Notas");
+  const headerRow = worksheet.getRow(1);
+  headerRow.height = 24;
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF0F172A" }
+    };
+    cell.alignment = { vertical: "middle", horizontal: "center" };
+    cell.border = {
+      top: { style: "thin", color: { argb: "FFE2E8F0" } },
+      left: { style: "thin", color: { argb: "FFE2E8F0" } },
+      bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+      right: { style: "thin", color: { argb: "FFE2E8F0" } }
+    };
+  });
 
-  const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+  gradebook.students.forEach((student) => {
+    const rowData = {
+      student: student.fullName,
+      identification: student.identification || "-"
+    };
+
+    gradebook.evaluations.forEach((evaluation) => {
+      const header = `${evaluation.name} (${evaluation.percentage}%)`;
+      const grade = student.grades.find((item) => item.evaluationId === evaluation.id);
+      rowData[header] = grade?.value ?? "";
+    });
+
+    rowData.final = student.finalGrade;
+
+    const row = worksheet.addRow(rowData);
+    row.height = 22;
+
+    row.eachCell((cell, columnNumber) => {
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFE2E8F0" } },
+        left: { style: "thin", color: { argb: "FFE2E8F0" } },
+        bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+        right: { style: "thin", color: { argb: "FFE2E8F0" } }
+      };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: columnNumber <= 2 ? "left" : "center"
+      };
+    });
+
+    for (let index = 0; index < gradebook.evaluations.length; index += 1) {
+      const columnIndex = index + 3;
+      const gradeCell = row.getCell(columnIndex);
+
+      if (gradeCell.value !== "") {
+        const tones = getExcelTone(gradeCell.value);
+        gradeCell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: `FF${tones.fill}` }
+        };
+        gradeCell.font = {
+          color: { argb: `FF${tones.font}` },
+          bold: true
+        };
+      }
+    }
+
+    const finalCell = row.getCell(gradebook.evaluations.length + 3);
+    const finalTones = getExcelTone(student.finalGrade);
+    finalCell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: `FF${finalTones.fill}` }
+    };
+    finalCell.font = {
+      color: { argb: `FF${finalTones.font}` },
+      bold: true
+    };
+    finalCell.numFmt = "0.00";
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
 
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", `attachment; filename="${gradebook.name}.xlsx"`);
