@@ -4,9 +4,7 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: |
-      cd server && npm install --include=dev && npx prisma generate
-      cd ../client && npm install --include=dev && npm run build
+    buildCommand: cd server && npm install --include=dev && npx prisma generate && cd ../client && npm install --include=dev && npm run build
     startCommand: cd server && npm run migrate:deploy && npm run start
     envVars:
       - key: NODE_VERSION
