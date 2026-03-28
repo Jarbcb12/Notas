@@ -413,6 +413,18 @@ La forma mas simple para este proyecto es desplegarlo en Render como una sola ap
 - `JWT_SECRET`: debes configurarla tu
 - `CORS_ORIGINS`: opcional si usas el mismo dominio para frontend y backend
 
+### Nota importante sobre Prisma en este proyecto
+
+Para simplificar el primer despliegue, la version actual usa:
+
+```bash
+npx prisma db push
+```
+
+en el arranque de produccion para crear el esquema en la base de datos si aun no existe.
+
+Mas adelante, cuando el producto crezca, conviene migrar a un flujo formal con `prisma migrate deploy` y versionado de migraciones.
+
 ### Despues del primer deploy
 
 1. Abre la URL publica de la app.
