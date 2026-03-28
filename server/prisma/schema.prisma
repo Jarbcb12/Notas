@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EvaluationType {
+  HOMEWORK
+  QUIZ
+  EXAM
+  PROJECT
+  CUSTOM
+}
+
+model User {
+  id           String    @id @default(cuid())
+  fullName     String
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  groups       Group[]
+}
+
+model Group {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  teacherId   String
+  teacher     User         @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  students    Student[]
+  evaluations Evaluation[]
+
+  @@index([teacherId])
+}
+
+model Student {
+  id             String   @id @default(cuid())
+  fullName       String
+  identification String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  groupId        String
+  group          Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  grades         Grade[]
+
+  @@index([groupId])
+}
+
+model Evaluation {
+  id          String         @id @default(cuid())
+  name        String
+  percentage  Decimal        @db.Decimal(5, 2)
+  type        EvaluationType @default(CUSTOM)
+  order       Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  groupId     String
+  group       Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  grades      Grade[]
+
+  @@index([groupId])
+}
+
+model Grade {
+  id           String     @id @default(cuid())
+  value        Decimal    @db.Decimal(3, 2)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  studentId    String
+  evaluationId String
+  student      Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  evaluation   Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, evaluationId])
+  @@index([studentId])
+  @@index([evaluationId])
+}
