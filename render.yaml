@@ -5,7 +5,7 @@ services:
     plan: free
     region: oregon
     buildCommand: cd server && npm install --include=dev && npx prisma generate && cd ../client && npm install --include=dev && npm run build
-    startCommand: cd server && npx prisma db push && npm run start
+    startCommand: cd server && npm run migrate:deploy && npm run start
     envVars:
       - key: NODE_VERSION
         value: "20"

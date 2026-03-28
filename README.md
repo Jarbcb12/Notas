@@ -415,15 +415,13 @@ La forma mas simple para este proyecto es desplegarlo en Render como una sola ap
 
 ### Nota importante sobre Prisma en este proyecto
 
-Para simplificar el primer despliegue, la version actual usa:
+El proyecto ya incluye migraciones de Prisma en `server/prisma/migrations`, por lo que en produccion el arranque usa:
 
 ```bash
-npx prisma db push
+npm run migrate:deploy
 ```
 
-en el arranque de produccion para crear el esquema en la base de datos si aun no existe.
-
-Mas adelante, cuando el producto crezca, conviene migrar a un flujo formal con `prisma migrate deploy` y versionado de migraciones.
+Eso aplica el esquema versionado a la base de datos antes de levantar la API.
 
 ### Despues del primer deploy
 
