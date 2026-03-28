@@ -59,6 +59,9 @@ function LoginPage() {
       <Link className="mt-4 inline-flex text-sm text-brand-300 hover:text-brand-200" to="/register">
         Crear una cuenta nueva
       </Link>
+      <Link className="mt-3 inline-flex text-sm text-slate-400 hover:text-slate-200" to="/forgot-password">
+        Olvide mi contrasena
+      </Link>
     </AuthShell>
   );
 }

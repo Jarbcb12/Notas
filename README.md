@@ -412,6 +412,9 @@ La forma mas simple para este proyecto es desplegarlo en Render como una sola ap
 - `DATABASE_URL`: la inyecta Render desde la base de datos
 - `JWT_SECRET`: debes configurarla tu
 - `CORS_ORIGINS`: opcional si usas el mismo dominio para frontend y backend
+- `APP_URL`: URL publica de tu app, por ejemplo `https://tuapp.onrender.com`
+- `RESEND_API_KEY`: API key de Resend para enviar correos reales
+- `EMAIL_FROM`: remitente verificado en Resend
 
 ### Nota importante sobre Prisma en este proyecto
 
@@ -428,7 +431,44 @@ Eso aplica el esquema versionado a la base de datos antes de levantar la API.
 1. Abre la URL publica de la app.
 2. Registra un profesor nuevo o crea un seed manual desde consola si lo necesitas.
 3. Prueba login, creacion de grupo, carga de notas y exportacion.
+4. Configura recuperacion de contrasena con Resend antes de invitar usuarios reales.
 
 ### Si quieres dominio propio
 
 En Render puedes conectar tu dominio y apuntar los DNS desde tu proveedor. Cuando eso quede listo, la app funcionara en esa URL publica.
+
+## 16. Recuperacion de contrasena
+
+La app ya incluye:
+
+- pantalla `Olvide mi contrasena`
+- generacion de token temporal seguro
+- expiracion del enlace en 1 hora
+- pantalla para crear nueva contrasena
+- envio de correo con Resend
+
+### Variables necesarias
+
+En local o en Render configura:
+
+```env
+APP_URL="https://tu-dominio-o-url-publica"
+RESEND_API_KEY="re_xxxxxxxxx"
+EMAIL_FROM="Tu App <no-reply@tu-dominio.com>"
+```
+
+### Flujo
+
+1. El usuario escribe su correo en `/forgot-password`.
+2. El backend genera un token, guarda su hash y su expiracion.
+3. Se envia un enlace tipo:
+
+```text
+https://tuapp.com/reset-password?token=abc123
+```
+
+4. El usuario abre ese enlace y define una nueva contrasena.
+
+### Desarrollo local
+
+Si `RESEND_API_KEY` no esta configurada, el backend no enviara el correo real y en desarrollo devolvera el link temporal en la respuesta para que puedas probar el flujo.

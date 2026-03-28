@@ -19,6 +19,14 @@ vi.mock("./pages/RegisterPage", () => ({
   default: () => <div>Crear cuenta</div>
 }));
 
+vi.mock("./pages/ForgotPasswordPage", () => ({
+  default: () => <div>Recupera tu acceso</div>
+}));
+
+vi.mock("./pages/ResetPasswordPage", () => ({
+  default: () => <div>Nueva contrasena</div>
+}));
+
 vi.mock("./pages/DashboardPage", () => ({
   default: () => <div>Gestion visual de notas y evaluaciones</div>
 }));

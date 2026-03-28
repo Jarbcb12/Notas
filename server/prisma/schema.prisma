@@ -20,6 +20,8 @@ model User {
   fullName     String
   email        String    @unique
   passwordHash String
+  resetToken   String?
+  resetTokenExpiresAt DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   groups       Group[]

@@ -14,3 +14,13 @@ export async function meRequest() {
   const { data } = await http.get("/auth/me");
   return data;
 }
+
+export async function forgotPasswordRequest(payload) {
+  const { data } = await http.post("/auth/forgot-password", payload);
+  return data;
+}
+
+export async function resetPasswordRequest(payload) {
+  const { data } = await http.post("/auth/reset-password", payload);
+  return data;
+}
